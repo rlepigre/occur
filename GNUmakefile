@@ -1,3 +1,5 @@
+BINDIR = $(dir $(shell which ocamlc))
+
 all: occur
 
 occur: occur.ml
@@ -8,3 +10,8 @@ clean:
 
 distclean: clean
 	rm -f occur
+
+install: occur clean
+	install -m 755 $< $(BINDIR)
+
+
