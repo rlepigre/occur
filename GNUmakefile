@@ -12,6 +12,7 @@ distclean: clean
 	rm -f occur
 
 install: occur clean
+	install -d 755 $(BINDIR)
 	install -m 755 $< $(BINDIR)
 
 
