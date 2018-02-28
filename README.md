@@ -1,5 +1,7 @@
 # For those that are confused
-## with positive / negative occurences (of variables (in types))
+## with positive / negative occurences
+### of variables
+#### in types
 
 To install `occur` you will need `OCaml >= 4.03`, `ocamlfind` and `earley`.
 
