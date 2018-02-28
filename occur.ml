@@ -59,16 +59,14 @@ let rec pos_p : ty -> words =
       S.union su sv
 
 let parser ty (p : [`A | `F]) =
-  | b:''[a-z]''              when p = `A -> B(b)
+  | b:''[a-zA-Z]''           when p = `A -> B(b)
   | '(' t:(ty `F) ')'        when p = `A -> t
   | u:(ty `A) "->" v:(ty `F) when p = `F -> F(u,v)
   | t:(ty `A)                when p = `F -> t
 let ty = ty `F
 
 let parse : string -> ty =
-  fun s ->
-    try Earley.parse_string ty (Earley.blank_regexp ''[ ]*'') s
-    with _ -> Printf.eprintf "Parse error...\n"; exit (-1)
+  Earley.parse_string ty (Earley.blank_regexp ''[ ]*'')
 
 let work : (ty -> S.t) -> string -> unit =
   fun f s ->
@@ -125,19 +123,29 @@ let report_list : string -> unit =
 let report : string -> unit =
   fun s -> Printf.printf "%a\n" print (parse s)
 
+let help () =
+  let p = Sys.argv.(0) in
+  Printf.eprintf "Usage:\n";
+  Printf.eprintf "  %s TYPE     # show variance using colors\n%!"  p;
+  Printf.eprintf "  %s C TYPE   # positions of C in TYPE\n%!"      p;
+  Printf.eprintf "  %s + TYPE   # positive positions in TYPE\n%!"  p;
+  Printf.eprintf "  %s - TYPE   # negative positions in TYPE\n%!"  p;
+  Printf.eprintf "  %s -l TYPE  # list variance of occurences\n%!" p;
+  Printf.eprintf "  %s -h       # show this usage message\n%!"     p;
+  Printf.eprintf "Examples of TYPE:\n%!";
+  Printf.eprintf "  - \"A -> B -> C\" (same as \"A -> (B -> C)\")\n%!";
+  Printf.eprintf "  - \"((A -> B) -> A) -> A\"\n%!"
+
 let _ =
-  match Sys.argv with
-  | [|_;"+";s|]                          -> work pos_p s
-  | [|_;"-";s|]                          -> work pos_m s
-  | [|_;c  ;s|] when String.length c = 1 -> work (pos c) s
-  | [|_;"-l";s|]                         -> report_list s
-  | [|_;s|]                              -> report s
-  | _                                    ->
-      let p = Sys.argv.(0) in
-      Printf.eprintf "Usage:\n";
-      Printf.eprintf "  %s C TYPE   # positions of C in TYPE\n%!"      p;
-      Printf.eprintf "  %s + TYPE   # positive positions in TYPE\n%!"  p;
-      Printf.eprintf "  %s - TYPE   # negative positions in TYPE\n%!"  p;
-      Printf.eprintf "  %s -l TYPE  # list variance of occurences\n%!" p;
-      Printf.eprintf "  %s TYPE     # show variance using colors\n%!"  p;
-      Printf.eprintf "  %s -h       # show this usage message\n%!"     p
+  try 
+    match Sys.argv with
+    | [|_;"+";s|]                          -> work pos_p s
+    | [|_;"-";s|]                          -> work pos_m s
+    | [|_;c  ;s|] when String.length c = 1 -> work (pos c) s
+    | [|_;"-l";s|]                         -> report_list s
+    | [|_;"-h"|]                           -> help ()
+    | [|_;s|]                              -> report s
+    | [|_|]                                -> help ()
+    | _                                    -> help (); exit 1
+  with Earley.Parse_error _ ->
+    Printf.eprintf "Parse error...\n"; help (); exit 1
